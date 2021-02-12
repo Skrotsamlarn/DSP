@@ -1,0 +1,44 @@
+Sliding Window - An Introduction to Reliable Data Transfer 
+
+Date: 
+Student1: name, email@student.uu.se
+Student2: name, email@student.uu.se
+
+Write down the answers to the corresponding questions below. Submit this file, with your answers, to the Student portal after renaming it according to the
+submission instructions.
+
+Task 1 
+-----------
+Question 1:  
+Question 2:
+
+Task 2 
+-----------
+Question 3:
+Question 4:
+
+Task 3
+-----------  
+Question 5:
+Question 6:
+
+Task 4
+-----------  
+Question 7:
+Question 8:
+Question 9:
+Question 10:
+Go-Back-N: <good>, <bad>
+Selective Repeat: <good>, <bad>
+
+Statement
+-----------
+We have independently worked on the above assignment solution.
+We have both taken part in creating the solution, according to the 
+assignment specification(Answer Yes/No):
+
+If No, clarify how you cooperated so that there will be no misunderstandings: 
+
+
+
+__________ End ________

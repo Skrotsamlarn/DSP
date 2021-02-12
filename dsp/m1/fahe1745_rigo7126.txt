@@ -1,0 +1,44 @@
+Date: 2021.02.01
+Student1: Richard Götherström, richard.gotherstrom.7126@student.uu.se
+Student2: Fanny Hermanson, fanny.hermanson.1745@student.uu.se
+
+Write down the answers to the corresponding questions below. Submit this file, with your answers, to the Student portal after renaming it according to the
+submission instructions.
+
+Task 1
+Question 1: Since we are only sending and receiving one packet at a time, the Stop-and-Wait protocol is extremely slow.
+Question 2: The biggest difference between Stop-and-Wait, Go-Back-N and selective repeat is that they implement the sliding window koncept on different levels. Stop-and-Wait don’t use it at all, Go-Back-N uses it on the sending side and selective repeat on both sides. This is a good way of increasing the speed.
+
+Task 2
+Question 3: When a package gets lost, an ACK will not be sent. THe receiver side will return ACKs for the upcoming packets, but they will not be stored, and will therefore have to be sent once more. This is due to the fact that there is only a sliding window on the sender side.
+Question 4: This time every package that is sent will be acknowledged (ack received) on the sender side, since the acks after the lost ack will have information about what happened before. This is called cumulative ACKs.
+
+Task 3
+Question 5: In selective repeat, when a package gets lost, the following packages will be stored in a buffer. We can do this because of the fact that selective repeat uses sliding windows on both the sender and receiver side. This means that only the packet that got lost will be resent.
+Question 6: ACKs in selective repeat are selective, which means that not received ACKs will always lead to resent packages. 
+
+Task 4
+Question 7: A received ACK corresponding to the base package.
+Question 8: When a package get correctly ACKed the window can move to the right, and will absorb one empty slot.
+Question 9: The simplest answer on how to represent a window would be to use as many bits needed to represent the number of slots in the window. In a perfect system where no packets or ACKs got lost this would work. Since the world isn't perfect we instead use one more bit to double the amount of possible sequence codes. This will make sure that codes do not get mixed up, and in other meaning that the packages don’t get mixed up. In our case we would need 4 bits to represent the number 10, and since we want to double the possible codes for security reasons, we add one more bit. This means we would have a 5 bit sequence number.
+Question 10:
+Go-Back-N: <good> Much faster than Stop-and-Wait. <bad> Uses the communication link in an unnecessarily big way. This is because many not broken packets need to be retransmitted.
+
+Selective Repeat: <good> Can receive packages in any order and be sorted later. <bad> Uses more memory since the packages and ACKs will need bigger sequence numbers.
+
+
+
+
+
+Statement
+-----------
+We have independently worked on the above assignm.
+We have both taken part in creating the solution, according to the
+assignment specification(Answer Yes/No): No
+
+If No, clarify how you cooperated so that there will be no misunderstandings:
+We have both worked on this assignment, and mostly independently except from the last two questions. These we discussed with group A3, Leo Arnholm Söderberg and Erik Lif. 
+
+
+__________ End ________
+
