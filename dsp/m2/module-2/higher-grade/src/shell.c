@@ -9,8 +9,8 @@
 #include <stdbool.h>
 #include <fcntl.h>     //fcntl(), F_GETFL
 
-#define READ  0
-#define WRITE 1
+#define STD_IN  0
+#define STD_OUT 1
 
 /**
  * For simplicitiy we use a global array to store data of each command in a
@@ -49,7 +49,7 @@ void fork_error() {
  *  Fork a proccess for command with index i in the command pipeline. If needed,
  *  create a new pipe and update the in and out members for the command..
  */
-void fork_cmd(int i) {
+void fork_cmd(int i, int n) {
   pid_t pid;
 
   switch (pid = fork()) {
@@ -57,7 +57,26 @@ void fork_cmd(int i) {
       fork_error();
     case 0:
       // Child process after a successful fork().
-
+      position_t pos = cmd_position(i, n);
+      if (pos == single){
+        
+      }
+      if (pos == first){
+        close(pfd[0]);        // stänga vår read på pipe
+        dup2(pfd[1], STDOUT); // ersätta stdout med vår pipebörjan
+        close(pfd[1]);        // stänga vår pipebörjan
+      }
+      if (pos == middle){
+        return;
+      }
+      if (pos == last){
+        close(pfd[1]);        // stänga vår read på pipe
+        dup2(pfd[0], STDOUT); // ersätta stdout med vår pipebörjan
+        close(pfd[0]);        // stänga vår pipebörjan
+      }
+      if (pos == unknown){
+        return;
+      }
       // Execute the command in the contex of the child process.
       execvp(commands[i].argv[0], commands[i].argv);
 
@@ -78,7 +97,7 @@ void fork_cmd(int i) {
 void fork_commands(int n) {
 
   for (int i = 0; i < n; i++) {
-    fork_cmd(i);
+    fork_cmd(i, n);
   }
 }
 
@@ -95,10 +114,20 @@ void get_line(char* buffer, size_t size) {
  * Make the parents wait for all the child processes.
  */
 void wait_for_all_cmds(int n) {
-  // Not implemented yet!
+  for (int i = 0; i < n; i++) {
+    wait(i); // NOT DONE kan vara fel
+  }
+}
+
+/**
+ * Close remaining file descriptors.
+ */
+void close_all(){
+  return;
 }
 
 int main() {
+  int pfd[2];
   int n;               // Number of commands in a command pipeline.
   size_t size = 128;   // Max size of a command line string.
   char line[size];     // Buffer for a command line string.
@@ -112,6 +141,8 @@ int main() {
     n = parse_commands(line, commands);
 
     fork_commands(n);
+
+    close_all(); //TODO
 
     wait_for_all_cmds(n);
   }

@@ -36,4 +36,9 @@ void print_argv(char* argv[]);
  */
 char* position_to_string(position_t pos);
 
+/**
+ * Returns postion state for command.
+ */
+position_t cmd_position(int i, int n);
+
 #endif // PARSER_H_
