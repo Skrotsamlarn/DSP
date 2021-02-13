@@ -61,25 +61,21 @@ void fork_cmd(int i, int pfd_prv[], int pfd_next[]) {
       // Child process after a successful fork().
       pos = commands[i].pos;
       if (pos == single){
-        puts("pos single");
         close(pfd_next[READ]);
         close(pfd_next[WRITE]);
       }
       else if (pos == first){
-        puts("pos first");
         close(pfd_next[READ]);        // stänga vår read på pipe
         dup2(pfd_next[WRITE], STDOUT); // ersätta stdout med vår pipebörjan
         close(pfd_next[WRITE]);        // stänga vår pipebörjan
       }
       else if (pos == middle){
-        puts("pos middle");
         dup2(pfd_prv[READ], STDIN);
         dup2(pfd_next[WRITE], STDOUT); // ersätta stdout med vår pipebörjan
         close(pfd_prv[READ]);
         close(pfd_next[WRITE]); 
       }
       else if (pos == last){
-        puts("pos last");
         close(pfd_prv[WRITE]);        // 
         dup2(pfd_prv[READ], STDIN); 
         close(pfd_prv[READ]);        
@@ -103,7 +99,7 @@ void fork_cmd(int i, int pfd_prv[], int pfd_next[]) {
 /**
  *  Fork one child process for each command in the command pipeline.
  */
-void fork_commands(int n, int pfd[]) {
+void fork_commands(int n) {
   int pfd_prv[2];
   int pfd_next[2];
   int success;
@@ -153,8 +149,7 @@ void wait_for_all_cmds(int n) {
 
 
 int main() {
-  int pfd[2];
-  
+
   int n;               // Number of commands in a command pipeline.
   size_t size = 128;   // Max size of a command line string.
   char line[size];     // Buffer for a command line string.
@@ -164,11 +159,9 @@ int main() {
     printf(" >>> ");
     get_line(line, size);
     n = parse_commands(line, commands);
-    puts("kommer hit");    
-    fork_commands(n, pfd);
+    fork_commands(n);
     wait_for_all_cmds(n);
-   // print_commands(n);    
- //   break;
+
   }
 
   exit(EXIT_SUCCESS);
