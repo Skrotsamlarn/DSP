@@ -9,14 +9,20 @@
 #include <stdbool.h>
 #include <fcntl.h>     //fcntl(), F_GETFL
 
-#define STD_IN  0
-#define STD_OUT 1
+#define STDIN  0
+#define STDOUT 1
 
 /**
  * For simplicitiy we use a global array to store data of each command in a
  * command pipeline .
  */
 cmd_t commands[MAX_COMMANDS];
+
+/**
+ * For simplicitiy we use a global array to store pid of each command in a
+ * command pipeline .
+ */
+pid_t pids[MAX_COMMANDS];
 
 /**
  *  Debug printout of the commands array.
@@ -49,32 +55,39 @@ void fork_error() {
  *  Fork a proccess for command with index i in the command pipeline. If needed,
  *  create a new pipe and update the in and out members for the command..
  */
-void fork_cmd(int i, int n) {
+void fork_cmd(int i, int n, int pfd[]) {
   pid_t pid;
-
+  position_t pos;
   switch (pid = fork()) {
     case -1:
       fork_error();
     case 0:
       // Child process after a successful fork().
-      position_t pos = cmd_position(i, n);
+      pos = cmd_position(i, n);
       if (pos == single){
-        
+        close(pfd[0]);
+        close(pfd[1]);
       }
-      if (pos == first){
+      else if (pos == first){
+        puts("pos first");
         close(pfd[0]);        // stänga vår read på pipe
         dup2(pfd[1], STDOUT); // ersätta stdout med vår pipebörjan
         close(pfd[1]);        // stänga vår pipebörjan
       }
-      if (pos == middle){
-        return;
+      else if (pos == middle){
+        puts("pos middle/single");
+        dup2(pfd[0], STDIN);
+        dup2(pfd[1], STDOUT); // ersätta stdout med vår pipebörjan
+        close(pfd[0]);
+        close(pfd[1]); 
       }
-      if (pos == last){
-        close(pfd[1]);        // stänga vår read på pipe
-        dup2(pfd[0], STDOUT); // ersätta stdout med vår pipebörjan
-        close(pfd[0]);        // stänga vår pipebörjan
+      else if (pos == last){
+        puts("pos last");
+        close(pfd[1]);        // 
+        dup2(pfd[0], STDIN); 
+        close(pfd[0]);        
       }
-      if (pos == unknown){
+      else if (pos == unknown){
         return;
       }
       // Execute the command in the contex of the child process.
@@ -86,7 +99,7 @@ void fork_cmd(int i, int n) {
 
     default:
       // Parent process after a successful fork().
-
+      pids[i] = pid;
       break;
   }
 }
@@ -94,10 +107,10 @@ void fork_cmd(int i, int n) {
 /**
  *  Fork one child process for each command in the command pipeline.
  */
-void fork_commands(int n) {
+void fork_commands(int n, int pfd[]) {
 
   for (int i = 0; i < n; i++) {
-    fork_cmd(i, n);
+    fork_cmd(i, n, pfd);
   }
 }
 
@@ -114,17 +127,17 @@ void get_line(char* buffer, size_t size) {
  * Make the parents wait for all the child processes.
  */
 void wait_for_all_cmds(int n) {
+  pid_t pid;
   for (int i = 0; i < n; i++) {
-    wait(i); // NOT DONE kan vara fel
+    pid = pids[i];
+    wait(&pid); // NOT DONE kan vara fel
   }
 }
 
 /**
  * Close remaining file descriptors.
  */
-void close_all(){
-  return;
-}
+//void close_all(){}
 
 int main() {
   int pfd[2];
@@ -139,12 +152,13 @@ int main() {
     get_line(line, size);
 
     n = parse_commands(line, commands);
+    fork_commands(n, pfd);
 
-    fork_commands(n);
-
-    close_all(); //TODO
-
+ //   close_all(); //TODO
+    close(pfd[0]);
+    close(pfd[1]);
     wait_for_all_cmds(n);
+    print_commands(n);
   }
 
   exit(EXIT_SUCCESS);
