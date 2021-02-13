@@ -11,18 +11,14 @@
 
 #define STDIN  0
 #define STDOUT 1
+#define READ  0
+#define WRITE 1
 
 /**
  * For simplicitiy we use a global array to store data of each command in a
  * command pipeline .
  */
 cmd_t commands[MAX_COMMANDS];
-
-/**
- * For simplicitiy we use a global array to store pid of each command in a
- * command pipeline .
- */
-pid_t pids[MAX_COMMANDS];
 
 /**
  *  Debug printout of the commands array.
@@ -55,7 +51,7 @@ void fork_error() {
  *  Fork a proccess for command with index i in the command pipeline. If needed,
  *  create a new pipe and update the in and out members for the command..
  */
-void fork_cmd(int i, int n, int pfd[]) {
+void fork_cmd(int i, int pfd_prv[], int pfd_next[]) {
   pid_t pid;
   position_t pos;
   switch (pid = fork()) {
@@ -63,29 +59,30 @@ void fork_cmd(int i, int n, int pfd[]) {
       fork_error();
     case 0:
       // Child process after a successful fork().
-      pos = cmd_position(i, n);
+      pos = commands[i].pos;
       if (pos == single){
-        close(pfd[0]);
-        close(pfd[1]);
+        puts("pos single");
+        close(pfd_next[READ]);
+        close(pfd_next[WRITE]);
       }
       else if (pos == first){
         puts("pos first");
-        close(pfd[0]);        // stänga vår read på pipe
-        dup2(pfd[1], STDOUT); // ersätta stdout med vår pipebörjan
-        close(pfd[1]);        // stänga vår pipebörjan
+        close(pfd_next[READ]);        // stänga vår read på pipe
+        dup2(pfd_next[WRITE], STDOUT); // ersätta stdout med vår pipebörjan
+        close(pfd_next[WRITE]);        // stänga vår pipebörjan
       }
       else if (pos == middle){
-        puts("pos middle/single");
-        dup2(pfd[0], STDIN);
-        dup2(pfd[1], STDOUT); // ersätta stdout med vår pipebörjan
-        close(pfd[0]);
-        close(pfd[1]); 
+        puts("pos middle");
+        dup2(pfd_prv[READ], STDIN);
+        dup2(pfd_next[WRITE], STDOUT); // ersätta stdout med vår pipebörjan
+        close(pfd_prv[READ]);
+        close(pfd_next[WRITE]); 
       }
       else if (pos == last){
         puts("pos last");
-        close(pfd[1]);        // 
-        dup2(pfd[0], STDIN); 
-        close(pfd[0]);        
+        close(pfd_prv[WRITE]);        // 
+        dup2(pfd_prv[READ], STDIN); 
+        close(pfd_prv[READ]);        
       }
       else if (pos == unknown){
         return;
@@ -99,7 +96,6 @@ void fork_cmd(int i, int n, int pfd[]) {
 
     default:
       // Parent process after a successful fork().
-      pids[i] = pid;
       break;
   }
 }
@@ -108,9 +104,31 @@ void fork_cmd(int i, int n, int pfd[]) {
  *  Fork one child process for each command in the command pipeline.
  */
 void fork_commands(int n, int pfd[]) {
+  int pfd_prv[2];
+  int pfd_next[2];
+  int success;
 
   for (int i = 0; i < n; i++) {
-    fork_cmd(i, n, pfd);
+    if (i == 0){
+      success = pipe(pfd_next);
+      if (success < 0) perror("First pipe failed");
+      fork_cmd(i, NULL, pfd_next);
+      close(pfd_next[WRITE]);
+    }
+    else if(i<(n-1)){
+      pfd_prv[READ]=pfd_next[READ];
+      success = pipe(pfd_next);
+      if (success < 0) perror("Middle pipe failed");
+      fork_cmd(i, pfd_prv, pfd_next);
+      close(pfd_prv[READ]);
+      close(pfd_next[WRITE]);
+    }
+    else{
+      pfd_prv[READ] = pfd_next[READ];
+      fork_cmd(i, pfd_prv, NULL); 
+      close(pfd_prv[READ]);
+    }
+
   }
 }
 
@@ -127,38 +145,30 @@ void get_line(char* buffer, size_t size) {
  * Make the parents wait for all the child processes.
  */
 void wait_for_all_cmds(int n) {
-  pid_t pid;
+  int j;
   for (int i = 0; i < n; i++) {
-    pid = pids[i];
-    wait(&pid); // NOT DONE kan vara fel
+    wait(&j); // NOT DONE kan vara fel    
   }
 }
 
-/**
- * Close remaining file descriptors.
- */
-//void close_all(){}
 
 int main() {
   int pfd[2];
+  
   int n;               // Number of commands in a command pipeline.
   size_t size = 128;   // Max size of a command line string.
   char line[size];     // Buffer for a command line string.
-
-
+  
+  
   while(true) {
     printf(" >>> ");
-
     get_line(line, size);
-
     n = parse_commands(line, commands);
+    puts("kommer hit");    
     fork_commands(n, pfd);
-
- //   close_all(); //TODO
-    close(pfd[0]);
-    close(pfd[1]);
     wait_for_all_cmds(n);
-    print_commands(n);
+   // print_commands(n);    
+ //   break;
   }
 
   exit(EXIT_SUCCESS);
