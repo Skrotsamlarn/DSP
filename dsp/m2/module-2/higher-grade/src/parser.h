@@ -1,4 +1,5 @@
 #ifndef PARSER_H_
+    // On error fork() returns -1.
 #define PARSER_H_
 
 #define MAX_COMMANDS 16
@@ -35,5 +36,11 @@ void print_argv(char* argv[]);
  * ("single", "first", "middle" or "last").
  */
 char* position_to_string(position_t pos);
+
+/**
+ * Returns the position (single, first, middle or last) of the command at index
+ * i.
+ */
+position_t cmd_position(int i, int n);
 
 #endif // PARSER_H_
